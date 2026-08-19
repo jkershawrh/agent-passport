@@ -29,7 +29,7 @@ Agent Passport does **not** replace or duplicate:
 |---------|----------|------------------------|
 | Workload identity | SPIFFE / Kagenti AuthBridge | Passport is bootstrapped from SVID → agent_id |
 | Network/egress policy | OpenShell / OPA | Passport is consumed by policy evaluators |
-| Immutable audit trail | CPEX / Praxis | Passport emits lifecycle events via LedgerClient interface |
+| Immutable audit trail | [are-immutable-ledger](https://github.com/jkershawrh/are-immutable-ledger) | Passport emits lifecycle events via LedgerClient interface |
 | Agent lifecycle management | Kagenti AgentCard/AgentRuntime CRDs | Passport checks agent status via AgentRegistryClient interface |
 | Governance policy definition | ASAGO | Passport enforces policies defined upstream |
 
@@ -70,7 +70,7 @@ type CredentialStoreClient interface {
 }
 
 // LedgerClient — writes passport lifecycle events to immutable ledger
-// Connect to: CPEX / Praxis integration, or stub (no-op) for standalone
+// Connect to: are-immutable-ledger (github.com/jkershawrh/are-immutable-ledger), or stub (no-op) for standalone
 type LedgerClient interface {
     WriteEntry(ctx context.Context, entry LedgerEntry) error
 }

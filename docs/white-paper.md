@@ -117,11 +117,11 @@ Request Forwarded
 
 ---
 
-## Integration with CPEX / Praxis (Immutable Ledger)
+## Integration with the Immutable Ledger
 
-### What CPEX/Praxis Provide
+### The Ledger
 
-The immutable ledger — a hash-chained, tamper-evident record of agent lifecycle events — is being integrated into CPEX (Kagenti's coprocessor) and Praxis.
+The [are-immutable-ledger](https://github.com/jkershawrh/are-immutable-ledger) is a separate, purpose-built Rust service providing a hash-chained, tamper-evident record of agent lifecycle events. It supports per-entry-type chains with SHA-256 hashing, idempotency keys, and a transactional outbox. The ledger is being integrated with CPEX (Kagenti's coprocessor) and Praxis for downstream consumption.
 
 ### How Passport Integrates
 
@@ -132,7 +132,7 @@ Passport emits lifecycle events via the `LedgerClient` and `OutboxWriter` interf
 - **Passport revoked** — reason, revoked_by, timestamp
 - **Passport superseded** — old passport_id, new passport_id, reason
 
-These events flow to the CPEX/Praxis ledger implementation. Passport does not own the ledger — it produces the events that the ledger records.
+These events flow to the immutable ledger. Passport produces the authorization events; the ledger records them with tamper-evident hashing; CPEX/Praxis consume them downstream.
 
 **Audit query:** "Which agent, with what specific scopes, under which policy version, performed what action, when?" requires correlating passport events (authorization) with OpenShell audit events (execution). The `agent_id` is the join key.
 
@@ -229,7 +229,7 @@ Per the Kagenti gap analysis assignment, ARE's governance model maps to four dis
 | 1 | Identity | SPIFFE / Kagenti AuthBridge | Covered |
 | 2 | **Authority** | **Agent Passport** | **The gap — this repo** |
 | 3 | Enforcement | OPA / CPEX coprocessor | Covered |
-| 4 | Evidence | Immutable Ledger / CPEX / Praxis | In progress |
+| 4 | Evidence | [are-immutable-ledger](https://github.com/jkershawrh/are-immutable-ledger) + CPEX/Praxis integration | In progress |
 
 Passport is the authorization artifact that connects identity (layer below) to enforcement (layer above) and emits events to the evidence trail (parallel layer).
 
