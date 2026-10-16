@@ -59,36 +59,38 @@ Agent Passport connects to the broader agentic stack through five clean Go inter
 // AgentRegistryClient — checks agent existence and status
 // Connect to: Kagenti AgentCard CRD, or stub (all ACTIVE) for standalone
 type AgentRegistryClient interface {
-    GetAgentStatus(ctx context.Context, agentID string) (string, error)
+    GetAgentStatus(agentID string) (AgentStatus, error)
 }
 
 // CredentialStoreClient — signs and verifies passport payloads
 // Connect to: Sigstore, HashiCorp Vault, or stub (deterministic) for demos
 type CredentialStoreClient interface {
-    Sign(ctx context.Context, payload []byte) ([]byte, string, string, error)
-    Verify(ctx context.Context, payload, signature []byte, credentialID string) (bool, error)
+    Sign(payload []byte) (credentialID, publicKey string, signature []byte, err error)
+    Verify(publicKey string, payload, signature []byte) (bool, error)
 }
 
-// LedgerClient — writes passport lifecycle events to immutable ledger
+// LedgerClient — writes passport lifecycle events to an immutable ledger
 // Connect to: are-immutable-ledger (github.com/jkershawrh/are-immutable-ledger), or stub (no-op) for standalone
 type LedgerClient interface {
-    WriteEntry(ctx context.Context, entry LedgerEntry) error
+    WritePassportLifecycle(agentID, passportID, eventType, reason string) error
 }
 
 // OutboxWriter — enqueues async lifecycle events
 // Connect to: Kafka, NATS, or stub (no-op) for standalone
 type OutboxWriter interface {
-    Write(ctx context.Context, event OutboxEvent) error
+    Enqueue(eventType, agentID, passportID, reason string) error
 }
 
-// PolicyBundleRegistryClient — gets active policy version at issuance
+// PolicyBundleRegistryClient — gets the active policy bundle at issuance
 // Connect to: OPA bundle metadata, or stub for standalone
 type PolicyBundleRegistryClient interface {
-    ActiveBundle(ctx context.Context) (string, string, error)
+    ActivePolicyBundle() (policyID, policyVer string, err error)
 }
 ```
 
 All five have working stubs in `internal/local/wiring.go` — the engine runs fully standalone with no external dependencies.
+
+**Where the concrete connectors live.** This repository is the issuance/credential core: it defines the seams above and ships no-op defaults. The runnable runtime that connects them to a real registry, an OPA policy engine, and a live ledger is [srex-dev/are-foundation](https://github.com/srex-dev/are-foundation) — the S0/S1 REST BFF (`sx/s0s1-rest-bff`) evaluates scope and policy per request and writes passport lifecycle to the ledger, with the OPA integration in `s1/opa-integration-layer`. Scope evaluation at enforcement time is the consuming runtime's job by design: the passport carries the scope (`internal/domain/passport.go`); the runtime decides whether a request matches it.
 
 ## Quickstart
 
